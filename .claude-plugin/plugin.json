@@ -1,16 +1,13 @@
 {
   "name": "better-memory",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cross-session personal memory system for Claude Code with intent-based triggering, classification decision tree, and INDEX synchronization. Stores user facts, preferences, technical resources, and conditional behavior rules at ~/.claude/memory/.",
   "author": {
     "name": "FruityMaxine",
     "url": "https://github.com/FruityMaxine"
   },
   "homepage": "https://github.com/FruityMaxine/better-memory",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/FruityMaxine/better-memory.git"
-  },
+  "repository": "https://github.com/FruityMaxine/better-memory.git",
   "license": "MIT",
   "keywords": [
     "memory",
