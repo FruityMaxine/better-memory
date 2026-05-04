@@ -1,6 +1,6 @@
 ---
 name: better-memory
-description: Cross-session personal memory system for storing user facts, preferences, technical resources, and conditional behavior rules across all projects. Use whenever the user expresses intent to save / record / remember / store / recall / forget / update any piece of information across sessions — detect intent by meaning, NOT keyword matching. Triggers include phrases like "记下", "记一下", "save this", "remember this", "存到 memory", "以后要记得", "I want you to know X", "from now on...", "忘掉", "去除", "delete this memory", as well as less explicit intents (the user describing a fact about themselves or a resource they want preserved). The skill maintains 3 categorized folders under ~/.claude/memory/ with an auto-synchronized INDEX.md, and routes content into one of four destinations: CLAUDE.md (always-loaded behavioral rules), about_me/ (personal facts that don't affect default behavior), reference/ (cross-project technical resources), or rules/ (conditional behavioral rules loaded only when relevant context appears).
+description: Cross-session global memory system. Activate on intent to save/update/recall/delete personal info across sessions. Routes to 4 destinations (CLAUDE.md, about_me/, reference/, rules/). Not for project-specific state or pending tasks.
 ---
 
 # better-memory
@@ -31,6 +31,32 @@ Examples of activation:
 
 Do not require exact phrasing. Detect intent.
 
+## What belongs in memory (and what doesn't)
+
+**Memory stores stable, cross-project knowledge.** It is NOT a task tracker or project journal.
+
+| ✅ Belongs in memory | ❌ Does NOT belong |
+|---|---|
+| 用户个人偏好、身份信息 | 待办事项、未完成的任务 |
+| 服务器/账号等技术资源的基本信息 | 项目进度、"做到哪了" |
+| 低频行为规则（做某类事时的规范） | 当前 session 的临时状态 |
+| 跨项目通用的事实 | 单个项目的 bug 列表、feature 计划 |
+
+**待办事项和项目进度**属于 Claude Code 内置的 project-level memory（`~/.claude/projects/<project>/memory/`），不要写入本系统。本系统只存"是什么"和"怎么做"，不存"还没做什么"。
+
+## Relationship with Claude Code's built-in project memory
+
+Claude Code has a built-in project-scoped memory system at `~/.claude/projects/<project>/memory/`. The two systems serve different purposes:
+
+| | better-memory (本 skill) | Project memory (内置) |
+|---|---|---|
+| **路径** | `~/.claude/memory/` | `~/.claude/projects/<project>/memory/` |
+| **作用域** | 全局，跨所有项目 | 单个项目 |
+| **内容** | 用户身份、偏好、技术资源、行为规则 | 项目特定的架构笔记、进度、待办 |
+| **索引** | `INDEX.md`（本 skill 管理） | `MEMORY.md`（内置系统管理） |
+
+**不要混用。** 项目相关的信息走内置系统，跨项目的个人知识走本 skill。
+
 ## Architecture (4 destinations)
 
 ```
@@ -46,7 +72,7 @@ Do not require exact phrasing. Detect intent.
         └── <topic>.md
 ```
 
-**Path is always `~/.claude/memory/`** (cross-project). Never write project-scoped memory under this skill — those belong to project-level memory systems handled by other plugins.
+**Path is always `~/.claude/memory/`** (cross-project). Never write project-scoped memory under this skill.
 
 ## Classification decision tree
 
@@ -76,6 +102,19 @@ Q1: Will this information change Claude's output in some answer?
 - "When I say 1+1, you reply 3" — affects every literal answer → CLAUDE.md (always-on rule).
 
 When ambiguous: **ask the user**, do not guess.
+
+## How rules/ files get loaded
+
+rules/ files are **low-frequency behavioral rules** — they only matter when the user is doing a specific type of task. The loading mechanism relies on **INDEX.md descriptions being specific enough for the model to match**:
+
+1. INDEX.md is **always read** at conversation start (enforced by CLAUDE.md pointer).
+2. Each rules/ entry in INDEX.md must describe **what task/scenario triggers it** — e.g., "做 Claude 插件发布时的规范" not just "发布规则".
+3. When the model reads INDEX.md and sees a rules/ description that matches the current task, it **must** Read that rules/ file before proceeding.
+
+**This is best-effort, not guaranteed.** The model decides whether a description matches. To maximize reliability:
+- Write INDEX descriptions as **task triggers**: "当 X 时的规则" / "做 Y 时必须遵守的规范"
+- Be specific: "Python 项目部署到 vega 时的检查清单" >> "部署规则"
+- If a rule is critical enough that missing it causes real damage, it belongs in CLAUDE.md, not rules/
 
 ## File granularity
 
@@ -133,18 +172,18 @@ type: about_me   # pick exactly one of: about_me | reference | rules
 # Memory Index
 
 ## about_me/
-- [basics.md](about_me/basics.md) — name, gender, profession, personal background
-- [lifestyle.md](about_me/lifestyle.md) — pets, food, schedule, hobbies
+- [basics.md](about_me/basics.md) — 姓名、性别、职业、个人背景
+- [lifestyle.md](about_me/lifestyle.md) — 宠物、饮食、作息、爱好
 
 ## reference/
-- [server_vega.md](reference/server_vega.md) — Hetzner CX23 main server (IP, SSH, billing, deployment)
-- [account_hetzner.md](reference/account_hetzner.md) — Hetzner Cloud account details
+- [server_vega.md](reference/server_vega.md) — Hetzner CX23 主服务器（IP、SSH、计费、部署）
+- [account_hetzner.md](reference/account_hetzner.md) — Hetzner Cloud 账号信息
 
 ## rules/
-- [marketplace_publishing.md](rules/marketplace_publishing.md) — auto-upload Claude plugins to marketplace after creation
+- [marketplace_publishing.md](rules/marketplace_publishing.md) — 做 Claude 插件发布时必须上传到 marketplace
 ```
 
-INDEX uses the `description` field from each file's frontmatter — keep them concise (no length limit, but aim for one informative sentence).
+INDEX uses the `description` field from each file's frontmatter — keep them concise (no length limit, but aim for one informative sentence). **rules/ entries must describe the triggering scenario**, not just the topic.
 
 **INDEX update triggers**:
 - New file created → add entry
@@ -154,7 +193,7 @@ INDEX uses the `description` field from each file's frontmatter — keep them co
 
 ## Write protocol
 
-1. **Search first.** `grep -ri <key topic>` under `~/.claude/memory/`. If a related file exists, append/update; don't create a duplicate.
+1. **Search first.** Use the Grep tool to search under `~/.claude/memory/` for the key topic. If a related file exists, append/update; don't create a duplicate.
 2. **Compress.** Strip filler ("嗯", "you know", "I mean"). Distill to facts/preferences. See compression rules below.
 3. **Classify.** Run the decision tree.
 4. **Pick filename**: `<type-folder>/<topic>.md`.
@@ -253,7 +292,7 @@ The pointer paragraph to add (verbatim):
 ## 个人记忆系统
 
 - **必读索引**：每次对话开始前 Read `~/.claude/memory/INDEX.md`，按其中描述决定是否读取具体记忆文件。
-- **必用 skill**：所有记忆相关操作（记录 / 更新 / 删除 / 查询）使用 `better-memory` skill。
+- **必用 skill**：所有记忆相关操作（记录 / 更新 / 删除 / 查询）使用 `better-memory:better-memory` skill。
 ```
 
 ## Anti-patterns
@@ -266,6 +305,7 @@ Don't:
 - **Silently overwrite preferences** — preference changes deserve explicit confirmation
 - **Put behavior rules in about_me/ or reference/** — they won't get enforced
 - **Put facts in rules/** — they'll trigger inappropriate behavior
+- **Store pending tasks or project progress** — those belong to project-level memory, not here
 - **Update INDEX on every micro-edit** — INDEX should be stable; only update when "what's available" changes
 - **Quote user's raw words verbatim** — compress to facts, except for proper nouns
 - **Compress so aggressively that nuance is lost** — "猫优先 / 狗也行" carries meaning; "喜欢动物" doesn't
@@ -275,7 +315,7 @@ Don't:
 
 ## Examples
 
-### Example 1: Personal preference (about_me)
+### Example 1: 个人偏好 (about_me)
 
 User: *"记下我喜欢黑色幽默"*
 
@@ -296,7 +336,7 @@ User: *"记下我喜欢黑色幽默"*
 5. Update INDEX.md.
 6. Confirm: *"Saved 黑色幽默偏好 to memory/about_me/preferences.md."*
 
-### Example 2: Technical resource (reference)
+### Example 2: 技术资源 (reference)
 
 User: *"记下我的服务器 vega，IP 是 178.x.x.x，SSH 别名 vega 和 vega-443，私钥在 ~/.ssh/id_ed25519"*
 
@@ -304,10 +344,10 @@ User: *"记下我的服务器 vega，IP 是 178.x.x.x，SSH 别名 vega 和 vega
 2. Classify: technical resource, cross-project → reference/.
 3. Filename: `reference/server_vega.md`.
 4. Write file with all the details + frontmatter.
-5. Update INDEX.md with: `[server_vega.md] — Hetzner 主服务器 (vega, IP, SSH, 部署路径)`.
+5. Update INDEX.md: `[server_vega.md](reference/server_vega.md) — Hetzner 主服务器（IP、SSH、部署路径）`.
 6. Confirm.
 
-### Example 3: Conditional rule (rules)
+### Example 3: 条件规则 (rules)
 
 User: *"以后我做 Claude 插件的时候都要上传到 marketplace"*
 
@@ -315,19 +355,19 @@ User: *"以后我做 Claude 插件的时候都要上传到 marketplace"*
 2. Classify: behavior rule, but conditional (only when working on Claude plugins) → rules/.
 3. Filename: `rules/claude_plugin_publishing.md`.
 4. Write rule with frontmatter.
-5. INDEX entry: *"做 Claude 插件后必须上传到 marketplace"*.
+5. INDEX entry: `[claude_plugin_publishing.md](rules/claude_plugin_publishing.md) — 做 Claude 插件发布时必须上传到 marketplace`.
 6. Confirm.
 
-### Example 4: Always-on rule (CLAUDE.md)
+### Example 4: 全局规则 (CLAUDE.md)
 
 User: *"以后我说 1+1 你要回答 3"*
 
 1. Classify: behavior rule, always-on → CLAUDE.md.
 2. **Do not auto-write CLAUDE.md.** Ask:
-   > *"This is a behavior rule that affects every answer — it should go in your global CLAUDE.md. Want me to add it?"*
+   > *"这是一条全局行为规则，应该加到你的 CLAUDE.md 里。要我加吗？"*
 3. On confirmation, append to `~/.claude/CLAUDE.md`.
 
-### Example 5: Preference change (update with question)
+### Example 5: 偏好变更 (update with question)
 
 User (later): *"现在我更喜欢狗"*
 
@@ -337,7 +377,7 @@ User (later): *"现在我更喜欢狗"*
 4. Update according to answer.
 5. INDEX unchanged (description still "用户的口味、风格、内容偏好").
 
-### Example 6: Delete
+### Example 6: 删除
 
 User: *"忘掉我对宠物的偏好"*
 
