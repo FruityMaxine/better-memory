@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[REMINDER] Strictly follow ALL rules in ~/.claude/CLAUDE.md.\""
+          }
+        ]
+      }
+    ]
+  }
+}

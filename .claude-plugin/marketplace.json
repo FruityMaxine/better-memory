@@ -9,7 +9,7 @@
       "name": "better-memory",
       "source": "./",
       "description": "Cross-session personal memory system with intent-based triggering, classification decision tree, and INDEX synchronization. Stores user facts, preferences, technical resources, and conditional behavior rules at ~/.claude/memory/.",
-      "version": "1.1.0"
+      "version": "1.2.0"
     }
   ]
 }
