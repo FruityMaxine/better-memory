@@ -5,7 +5,7 @@
 > Claude Code 跨会话个人记忆系统，意图触发、分类决策树、INDEX 自动同步。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/FruityMaxine/better-memory/releases)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/FruityMaxine/better-memory/releases)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Plugin-orange.svg)](https://docs.claude.com/claude-code)
 
 ---
@@ -48,7 +48,7 @@ Built-in CLAUDE.md is a single file that loads into every session. That works fo
 - **Compression rules** — strips filler, preserves nuance, keeps proper nouns verbatim
 - **Atomic writes** — file + INDEX update in one cycle
 - **Cross-platform** — works on Windows, macOS, Linux (path-independent)
-- **Reminder hook** — `UserPromptSubmit` hook injects a one-line reminder on every prompt, nudging Claude to re-check `~/.claude/CLAUDE.md` rules before responding (since 1.2.0)
+- **Mandatory rule-acknowledgement hook** — `UserPromptSubmit` hook now requires Claude to **re-read `~/.claude/CLAUDE.md` and prepend an `[ACK] <relevant rule keywords>` line** as the first line of every reply, instead of just receiving a passive reminder. Forces in-conversation enforcement with a 10-rule quick index (since 1.3.0)
 
 ### Installation
 
@@ -172,7 +172,7 @@ CLAUDE.md 就开始膨胀，token 浪费严重。
 - **压缩规则** — 去填充词、保留细微差异、专有名词原样保留
 - **原子写入** — 文件和 INDEX 同步更新
 - **跨平台** — Windows、macOS、Linux 通用（不依赖具体路径）
-- **提醒 hook** — `UserPromptSubmit` hook 在每条 prompt 时注入一行提醒，督促 Claude 回答前重读 `~/.claude/CLAUDE.md` 规则（v1.2.0 起）
+- **强制规则确认 hook** — `UserPromptSubmit` hook 注入强制指令：Claude 必须在回复**第一行**输出 `[ACK] <相关铁律关键词>`，证明已重读 `~/.claude/CLAUDE.md` 后再答题。从被动提醒升级为强制确认，附 10 条铁律索引（v1.3.0 起）
 
 ### 安装
 

@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo \"[REMINDER] Strictly follow ALL rules in ~/.claude/CLAUDE.md.\""
+            "command": "echo \"[MANDATORY] DO NOT SKIP. Before answering ANY user request: (1) Re-read every rule in ~/.claude/CLAUDE.md. (2) The FIRST line of your reply MUST be exactly: [ACK] <pick 1-3 most relevant rule keywords for this task>. (3) Then answer the task. Rule index: 1=Chinese-only-reply 2=No-Co-Authored-By-trailer 3=Bump-version-on-any-code-change 4=Frontend-workflow-design+impl+webapp-testing 5=Scan-loaded-skills-agents-MCP-first 6=Challenge-user-mistakes 7=No-laziness-finish-in-one-go 8=Use-better-memory-skill 9=UTF-8-before-PS-SSH-nonASCII 10=Loop-writes-docs-progress. SKIPPING STEP 2 = SERIOUS VIOLATION. THIS REMINDER OVERRIDES YOUR USUAL HABIT OF JUMPING DIRECTLY TO THE ANSWER.\""
           }
         ]
       }
